@@ -1,8 +1,322 @@
-<!DOCTYPE html>
-<html>
-<head><title>myportfolio</title></head>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Banking App - Singleton BankServer</title>
+  <style>
+    :root{ --bg:#0f1724; --card:#0b1220; --muted:#95a0b5; --accent:#3b82f6; --success:#10b981; --danger:#ef4444; }
+    *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071028 0%, #071827 100%);color:#e6eef8}
+    .wrap{max-width:1100px;margin:32px auto;padding:24px}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+    header h1{margin:0;font-size:20px}
+    .grid{display:grid;grid-template-columns:360px 1fr;gap:18px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input,select,button{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    button{cursor:pointer;border:none}
+    .muted{color:var(--muted);font-size:13px}
+    .accounts-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+    .acct{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);display:flex;justify-content:space-between;align-items:center}
+    .acct .meta{display:flex;flex-direction:column}
+    .actions{display:flex;gap:8px}
+    .btn-primary{background:linear-gradient(90deg,var(--accent),#60a5fa);color:white}
+    .btn-danger{background:linear-gradient(90deg,#fb7185,var(--danger));color:white}
+    .row{display:flex;gap:8px}
+    .transactions{max-height:420px;overflow:auto;margin-top:12px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.02);font-size:13px}
+    .small{font-size:12px;color:var(--muted)}
+    .summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+    .summary .tile{background:rgba(255,255,255,0.02);padding:12px;border-radius:10px;min-width:160px}
+    .footer{margin-top:12px;color:var(--muted);font-size:13px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr;}.wrap{padding:12px}}
+  </style>
+</head>
 <body>
-<h1>Hello! I am new software enginner.</h1>
-<p>This is my first web page using Git.</p>
+  <div class="wrap">
+    <header>
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2" stroke="white" stroke-opacity="0.12"/><path d="M4 10h16M8 14h.01M12 14h.01M16 14h.01" stroke="white" stroke-opacity="0.08" stroke-linecap="round"/></svg>
+      <div>
+        <h1>Banking App — Singleton BankServer</h1>
+        <div class="small">Single in-memory server instance manages accounts & transactions (data persisted to localStorage)</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <h3 style="margin-top:0">Create Account</h3>
+        <div class="muted small">Quickly create a simple account with an ID and initial balance.</div>
+        <div style="margin-top:10px">
+          <label for="acctName">Account name</label>
+          <input id="acctName" placeholder="e.g., Alice" />
+          <label for="acctId" style="margin-top:8px">Account id (unique)</label>
+          <input id="acctId" placeholder="e.g., AC001" />
+          <label for="initialBal" style="margin-top:8px">Initial balance</label>
+          <input id="initialBal" type="number" value="0" />
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button id="createBtn" class="btn-primary">Create Account</button>
+            <button id="clearBtn">Clear</button>
+          </div>
+        </div>
+
+        <hr style="margin:14px 0;border:none;border-top:1px solid rgba(255,255,255,0.02)"/>
+        <h4 style="margin:0">Accounts</h4>
+        <div class="accounts-list" id="accountsList">
+          <!-- accounts injected here -->
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="summary">
+          <div class="tile">
+            <div class="small">Server status</div>
+            <div id="status">Initializing…</div>
+          </div>
+          <div class="tile">
+            <div class="small">Total accounts</div>
+            <div id="totalAccts">0</div>
+          </div>
+          <div class="tile">
+            <div class="small">Total balance</div>
+            <div id="totalBal">0</div>
+          </div>
+        </div>
+
+        <h3 style="margin:6px 0">Transactions</h3>
+        <div class="muted small">Select an operation, an account, and perform operations. All operations are routed through the singleton BankServer instance.</div>
+
+        <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <label for="opType">Operation</label>
+            <select id="opType">
+              <option value="deposit">Deposit</option>
+              <option value="withdraw">Withdraw</option>
+              <option value="transfer">Transfer</option>
+            </select>
+          </div>
+          <div>
+            <label for="fromAcct">From / Account</label>
+            <select id="fromAcct"></select>
+          </div>
+          <div>
+            <label for="toAcct">To (for transfer)</label>
+            <select id="toAcct"></select>
+          </div>
+          <div>
+            <label for="amount">Amount</label>
+            <input id="amount" type="number" value="0" />
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button id="execBtn" class="btn-primary">Execute</button>
+          <button id="resetBtn" class="btn-danger">Reset Server (clear all)</button>
+        </div>
+
+        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.02)"/>
+        <h4 style="margin:0">Transaction History</h4>
+        <div class="transactions" id="txTableWrap">
+          <table id="txTable">
+            <thead><tr><th>Time</th><th>Type</th><th>Details</th><th>Amount</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="footer">This demo stores data in localStorage and demonstrates a singleton server pattern on the client for teaching / prototyping purposes. Not suitable for production.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // BankServer implemented as a Singleton class
+    class BankServer {
+      constructor() {
+        if (BankServer._instance) throw new Error('Use BankServer.getInstance()');
+        this._accounts = {}; // {id: {name, balance}}
+        this._transactions = []; // list of tx objects
+        this._loaded = false;
+        BankServer._instance = this;
+      }
+
+      static getInstance() {
+        if (!BankServer._instance) {
+          BankServer._instance = new BankServer();
+        }
+        return BankServer._instance;
+      }
+
+      // persistence helpers (localStorage)
+      persist() {
+        try {
+          localStorage.setItem('bank_accounts', JSON.stringify(this._accounts));
+          localStorage.setItem('bank_txs', JSON.stringify(this._transactions));
+        } catch (e) { console.warn('persist failed', e); }
+      }
+
+      load() {
+        if (this._loaded) return;
+        try {
+          const a = JSON.parse(localStorage.getItem('bank_accounts') || '{}');
+          const t = JSON.parse(localStorage.getItem('bank_txs') || '[]');
+          this._accounts = a || {};
+          this._transactions = t || [];
+        } catch (e) { console.warn('load failed', e); }
+        this._loaded = true;
+      }
+
+      // account management
+      createAccount(id, name, initialBalance = 0) {
+        this.load();
+        if (!id) throw new Error('Account id required');
+        if (this._accounts[id]) throw new Error('Account already exists');
+        this._accounts[id] = { id, name: name || id, balance: Number(initialBalance) };
+        this._transactions.unshift({time:new Date().toISOString(), type:'create', details:Account ${id} created, amount: Number(initialBalance) });
+        this.persist();
+        return this._accounts[id];
+      }
+
+      getAccount(id) { this.load(); return this._accounts[id] ? {...this._accounts[id]} : null; }
+
+      listAccounts() { this.load(); return Object.values(this._accounts).map(a=>({...a})); }
+
+      totalBalance(){ this.load(); return Object.values(this._accounts).reduce((s,a)=>s+Number(a.balance),0); }
+
+      totalAccounts(){ this.load(); return Object.keys(this._accounts).length; }
+
+      // transaction operations with simple validation
+      deposit(id, amount) {
+        this.load(); amount = Number(amount);
+        if (!this._accounts[id]) throw new Error('Account not found');
+        if (amount <= 0) throw new Error('Amount must be positive');
+        this._accounts[id].balance = Number(this._accounts[id].balance) + amount;
+        const tx = {time:new Date().toISOString(), type:'deposit', details:Deposit to ${id}, amount};
+        this._transactions.unshift(tx);
+        this.persist();
+        return tx;
+      }
+
+      withdraw(id, amount) {
+        this.load(); amount = Number(amount);
+        if (!this._accounts[id]) throw new Error('Account not found');
+        if (amount <= 0) throw new Error('Amount must be positive');
+        if (Number(this._accounts[id].balance) < amount) throw new Error('Insufficient funds');
+        this._accounts[id].balance = Number(this._accounts[id].balance) - amount;
+        const tx = {time:new Date().toISOString(), type:'withdraw', details:Withdraw from ${id}, amount};
+        this._transactions.unshift(tx);
+        this.persist();
+        return tx;
+      }
+
+      transfer(fromId, toId, amount) {
+        this.load(); amount = Number(amount);
+        if (!this._accounts[fromId]) throw new Error('Source account not found');
+        if (!this._accounts[toId]) throw new Error('Destination account not found');
+        if (amount <= 0) throw new Error('Amount must be positive');
+        if (Number(this._accounts[fromId].balance) < amount) throw new Error('Insufficient funds');
+        this._accounts[fromId].balance = Number(this._accounts[fromId].balance) - amount;
+        this._accounts[toId].balance = Number(this._accounts[toId].balance) + amount;
+        const tx = {time:new Date().toISOString(), type:'transfer', details:${fromId} → ${toId}, amount};
+        this._transactions.unshift(tx);
+        this.persist();
+        return tx;
+      }
+
+      getTransactions(limit = 200) { this.load(); return this._transactions.slice(0,limit); }
+
+      reset() { this._accounts = {}; this._transactions = []; this.persist(); }
+    }
+
+    // UI glue
+    const server = BankServer.getInstance();
+
+    const els = {
+      acctName:document.getElementById('acctName'),
+      acctId:document.getElementById('acctId'),
+      initialBal:document.getElementById('initialBal'),
+      createBtn:document.getElementById('createBtn'),
+      clearBtn:document.getElementById('clearBtn'),
+      accountsList:document.getElementById('accountsList'),
+      status:document.getElementById('status'),
+      totalAccts:document.getElementById('totalAccts'),
+      totalBal:document.getElementById('totalBal'),
+      opType:document.getElementById('opType'),
+      fromAcct:document.getElementById('fromAcct'),
+      toAcct:document.getElementById('toAcct'),
+      amount:document.getElementById('amount'),
+      execBtn:document.getElementById('execBtn'),
+      resetBtn:document.getElementById('resetBtn'),
+      txTable:document.querySelector('#txTable tbody')
+    };
+
+    function renderAccounts(){
+      const list = server.listAccounts();
+      els.accountsList.innerHTML = '';
+      els.fromAcct.innerHTML = '';
+      els.toAcct.innerHTML = '';
+      if (list.length===0) els.accountsList.innerHTML = '<div class="small muted">No accounts yet</div>';
+      list.forEach(a=>{
+        const div = document.createElement('div'); div.className='acct';
+        div.innerHTML = <div class="meta"><strong>${a.name}</strong><div class="small">${a.id}</div></div><div><div class="small">Balance</div><div><strong>${Number(a.balance).toFixed(2)}</strong></div></div>;
+        const actions = document.createElement('div'); actions.className='actions';
+        const del = document.createElement('button'); del.textContent='Delete'; del.className='small';
+        del.onclick = ()=>{ if(confirm('Delete account '+a.id+'? This will remove it and its history entry.')){ delete server._accounts[a.id]; server._transactions.unshift({time:new Date().toISOString(), type:'delete', details:Account ${a.id} deleted, amount:0}); server.persist(); refreshAll(); } };
+        actions.appendChild(del);
+        div.appendChild(actions);
+        els.accountsList.appendChild(div);
+
+        const opt = document.createElement('option'); opt.value = a.id; opt.textContent = ${a.id} — ${a.name};
+        els.fromAcct.appendChild(opt.cloneNode(true));
+        els.toAcct.appendChild(opt);
+      });
+
+      els.totalAccts.textContent = server.totalAccounts();
+      els.totalBal.textContent = server.totalBalance().toFixed(2);
+      els.status.textContent = 'Running (singleton instance)';
+    }
+
+    function renderTxs(){
+      const txs = server.getTransactions(200);
+      els.txTable.innerHTML = '';
+      txs.forEach(tx=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = <td class="small">${new Date(tx.time).toLocaleString()}</td><td class="small">${tx.type}</td><td class="small">${tx.details}</td><td class="small">${tx.amount!=null?Number(tx.amount).toFixed(2):''}</td>;
+        els.txTable.appendChild(tr);
+      });
+    }
+
+    function refreshAll(){ renderAccounts(); renderTxs(); }
+
+    // wire up events
+    els.createBtn.addEventListener('click', ()=>{
+      const id = els.acctId.value.trim(); const name = els.acctName.value.trim() || id; const bal = Number(els.initialBal.value||0);
+      try{ server.createAccount(id, name, bal); els.acctId.value=''; els.acctName.value=''; els.initialBal.value = 0; refreshAll(); }
+      catch(e){ alert('Error: '+e.message); }
+    });
+
+    els.clearBtn.addEventListener('click', ()=>{ els.acctId.value=''; els.acctName.value=''; els.initialBal.value=0; });
+
+    els.execBtn.addEventListener('click', ()=>{
+      const op = els.opType.value; const from = els.fromAcct.value; const to = els.toAcct.value; const amt = Number(els.amount.value);
+      try{
+        if (op==='deposit') { server.deposit(from, amt); }
+        else if (op==='withdraw'){ server.withdraw(from, amt); }
+        else if (op==='transfer'){ server.transfer(from, to, amt); }
+        els.amount.value = 0; refreshAll();
+      } catch(e){ alert('Error: '+e.message); }
+    });
+
+    els.resetBtn.addEventListener('click', ()=>{
+      if (confirm('Reset server: erase all accounts and transactions?')){ server.reset(); refreshAll(); }
+    });
+
+    // initial load
+    refreshAll();
+
+    // expose server for console debugging (singleton nature visible here)
+    window.BankServer = BankServer;
+    window._bankServer = server;
+
+  </script>
 </body>
 </html>
