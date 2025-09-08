@@ -1,322 +1,352 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Banking App - Singleton BankServer</title>
+  <title>Food Delivery App · PaymentFactory Pattern</title>
   <style>
-    :root{ --bg:#0f1724; --card:#0b1220; --muted:#95a0b5; --accent:#3b82f6; --success:#10b981; --danger:#ef4444; }
-    *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071028 0%, #071827 100%);color:#e6eef8}
-    .wrap{max-width:1100px;margin:32px auto;padding:24px}
-    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
-    header h1{margin:0;font-size:20px}
-    .grid{display:grid;grid-template-columns:360px 1fr;gap:18px}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
-    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    input,select,button{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
-    button{cursor:pointer;border:none}
-    .muted{color:var(--muted);font-size:13px}
-    .accounts-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
-    .acct{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);display:flex;justify-content:space-between;align-items:center}
-    .acct .meta{display:flex;flex-direction:column}
-    .actions{display:flex;gap:8px}
-    .btn-primary{background:linear-gradient(90deg,var(--accent),#60a5fa);color:white}
-    .btn-danger{background:linear-gradient(90deg,#fb7185,var(--danger));color:white}
-    .row{display:flex;gap:8px}
-    .transactions{max-height:420px;overflow:auto;margin-top:12px}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.02);font-size:13px}
-    .small{font-size:12px;color:var(--muted)}
-    .summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-    .summary .tile{background:rgba(255,255,255,0.02);padding:12px;border-radius:10px;min-width:160px}
-    .footer{margin-top:12px;color:var(--muted);font-size:13px}
-    @media (max-width:900px){.grid{grid-template-columns:1fr;}.wrap{padding:12px}}
+    :root{
+      --bg: #0b0c10;
+      --card: #111318;
+      --muted: #9aa4b2;
+      --text: #e6eaf2;
+      --brand: #6ee7b7;
+      --brand-2: #60a5fa;
+      --danger: #ef4444;
+      --ring: rgba(110,231,183,.35);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 10% -10%, rgba(96,165,250,.15), transparent),
+                  radial-gradient(1000px 600px at 90% 10%, rgba(110,231,183,.12), transparent),
+                  var(--bg);
+      color:var(--text);
+      min-height:100dvh; display:grid; place-items:center; padding:28px;
+    }
+    .app{ width:min(980px, 100%); }
+    .header{
+      display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px;
+    }
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand .logo{ width:44px; height:44px; border-radius:12px; display:grid; place-items:center; background:linear-gradient(135deg, var(--brand-2), var(--brand)); box-shadow: var(--shadow); }
+    .brand h1{ font-size: clamp(20px, 2.4vw, 28px); margin:0; letter-spacing:.3px; }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.00)), var(--card);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px; backdrop-filter: blur(6px);
+    }
+    .grid{ display:grid; grid-template-columns: 1.1fr .9fr; gap: 18px; }
+    @media (max-width: 840px){ .grid{ grid-template-columns: 1fr; } }
+
+    .section-title{ font-size:14px; text-transform:uppercase; color:var(--muted); letter-spacing:.14em; margin:0 0 12px; }
+
+    label{ display:block; font-size:14px; color:var(--muted); margin:12px 0 6px; }
+    input, select{ width:100%; background:#0f1116; color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px 14px; outline:none; transition:.2s ease; }
+    input:focus, select:focus{ border-color: var(--brand); box-shadow: 0 0 0 5px var(--ring); }
+    .row{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+
+    .btn{
+      margin-top:16px; appearance:none; border:none; cursor:pointer; font-weight:600; letter-spacing:.3px;
+      padding:12px 16px; border-radius:14px; background:linear-gradient(135deg, var(--brand), var(--brand-2));
+      color:#0b1220; box-shadow: 0 6px 20px rgba(96,165,250,.35);
+    }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+    .pill{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:#0f1116; border:1px solid rgba(255,255,255,.06); font-size:13px; color:var(--muted); }
+    .stack{ display:flex; gap:8px; flex-wrap:wrap; }
+
+    .output{ background:#0a0d12; border:1px dashed rgba(255,255,255,.14); border-radius:14px; padding:16px; font: 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; white-space:pre-wrap; word-break:break-word; min-height:110px; }
+
+    .error{ color: var(--danger); font-size: 13px; margin-top: 10px; display:none; }
+
+    .footer{ margin-top:14px; color:var(--muted); font-size:12px; text-align:center; }
+    .kbd{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#0f1116; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:2px 6px; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2" stroke="white" stroke-opacity="0.12"/><path d="M4 10h16M8 14h.01M12 14h.01M16 14h.01" stroke="white" stroke-opacity="0.08" stroke-linecap="round"/></svg>
-      <div>
-        <h1>Banking App — Singleton BankServer</h1>
-        <div class="small">Single in-memory server instance manages accounts & transactions (data persisted to localStorage)</div>
+  <div class="app">
+    <div class="header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">🍔</div>
+        <h1>Food Delivery – PaymentFactory Demo</h1>
       </div>
-    </header>
+      <div class="stack">
+        <span class="pill">Factory Method</span>
+        <span class="pill">UPI</span>
+        <span class="pill">Wallet</span>
+        <span class="pill">COD</span>
+        <span class="pill">Credit Card</span>
+      </div>
+    </div>
 
     <div class="grid">
-      <div class="card">
-        <h3 style="margin-top:0">Create Account</h3>
-        <div class="muted small">Quickly create a simple account with an ID and initial balance.</div>
-        <div style="margin-top:10px">
-          <label for="acctName">Account name</label>
-          <input id="acctName" placeholder="e.g., Alice" />
-          <label for="acctId" style="margin-top:8px">Account id (unique)</label>
-          <input id="acctId" placeholder="e.g., AC001" />
-          <label for="initialBal" style="margin-top:8px">Initial balance</label>
-          <input id="initialBal" type="number" value="0" />
-          <div style="margin-top:10px;display:flex;gap:8px">
-            <button id="createBtn" class="btn-primary">Create Account</button>
-            <button id="clearBtn">Clear</button>
-          </div>
-        </div>
+      <section class="card">
+        <h2 class="section-title">Checkout</h2>
+        <form id="checkout-form">
+          <label for="amount">Order Amount (₹)</label>
+          <input id="amount" name="amount" type="number" inputmode="decimal" min="1" step="0.01" placeholder="e.g., 599.00" required />
 
-        <hr style="margin:14px 0;border:none;border-top:1px solid rgba(255,255,255,0.02)"/>
-        <h4 style="margin:0">Accounts</h4>
-        <div class="accounts-list" id="accountsList">
-          <!-- accounts injected here -->
-        </div>
-      </div>
+          <label for="paymentType">Payment Method</label>
+          <select id="paymentType" name="paymentType" required>
+            <option value="">— Select —</option>
+            <option value="upi">UPI</option>
+            <option value="wallet">Wallet</option>
+            <option value="cod">Cash on Delivery (COD)</option>
+            <option value="credit">Credit Card</option>
+          </select>
 
-      <div class="card">
-        <div class="summary">
-          <div class="tile">
-            <div class="small">Server status</div>
-            <div id="status">Initializing…</div>
-          </div>
-          <div class="tile">
-            <div class="small">Total accounts</div>
-            <div id="totalAccts">0</div>
-          </div>
-          <div class="tile">
-            <div class="small">Total balance</div>
-            <div id="totalBal">0</div>
-          </div>
-        </div>
+          <!-- Dynamic fields mount here -->
+          <div id="dynamic-fields"></div>
 
-        <h3 style="margin:6px 0">Transactions</h3>
-        <div class="muted small">Select an operation, an account, and perform operations. All operations are routed through the singleton BankServer instance.</div>
+          <button class="btn" type="submit">Pay Now</button>
+          <div id="form-error" class="error"></div>
+        </form>
+      </section>
 
-        <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div>
-            <label for="opType">Operation</label>
-            <select id="opType">
-              <option value="deposit">Deposit</option>
-              <option value="withdraw">Withdraw</option>
-              <option value="transfer">Transfer</option>
-            </select>
-          </div>
-          <div>
-            <label for="fromAcct">From / Account</label>
-            <select id="fromAcct"></select>
-          </div>
-          <div>
-            <label for="toAcct">To (for transfer)</label>
-            <select id="toAcct"></select>
-          </div>
-          <div>
-            <label for="amount">Amount</label>
-            <input id="amount" type="number" value="0" />
-          </div>
-        </div>
-        <div style="margin-top:10px;display:flex;gap:8px">
-          <button id="execBtn" class="btn-primary">Execute</button>
-          <button id="resetBtn" class="btn-danger">Reset Server (clear all)</button>
-        </div>
-
-        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.02)"/>
-        <h4 style="margin:0">Transaction History</h4>
-        <div class="transactions" id="txTableWrap">
-          <table id="txTable">
-            <thead><tr><th>Time</th><th>Type</th><th>Details</th><th>Amount</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-        <div class="footer">This demo stores data in localStorage and demonstrates a singleton server pattern on the client for teaching / prototyping purposes. Not suitable for production.</div>
-      </div>
+      <section class="card">
+        <h2 class="section-title">Result</h2>
+        <div id="output" class="output" aria-live="polite"></div>
+        <div class="footer">Tip: Open DevTools (<span class="kbd">F12</span>) to see console logs.</div>
+      </section>
     </div>
   </div>
 
   <script>
-    // BankServer implemented as a Singleton class
-    class BankServer {
-      constructor() {
-        if (BankServer._instance) throw new Error('Use BankServer.getInstance()');
-        this._accounts = {}; // {id: {name, balance}}
-        this._transactions = []; // list of tx objects
-        this._loaded = false;
-        BankServer._instance = this;
-      }
+    /**
+     * PaymentFactory — Factory Method pattern demo
+     * Produces different payment objects for a food delivery checkout.
+     */
 
-      static getInstance() {
-        if (!BankServer._instance) {
-          BankServer._instance = new BankServer();
+    // Base Product
+    class Payment {
+      constructor({ amount }) {
+        this.amount = Number(amount);
+        if (!(this.amount > 0)) throw new Error("Invalid amount");
+      }
+      /** @returns {{status: 'success'|'failed', method: string, transactionId?: string, message?: string}} */
+      pay() { throw new Error("pay() must be implemented in subclass"); }
+    }
+
+    // Concrete Products
+    class UpiPayment extends Payment {
+      constructor({ amount, upiId }) {
+        super({ amount });
+        this.upiId = upiId;
+      }
+      pay() {
+        if (!/^\w[\w.\-]{1,}@\w{2,}$/i.test(this.upiId || "")) {
+          return { status: 'failed', method: 'UPI', message: 'Invalid UPI ID' };
         }
-        return BankServer._instance;
+        return {
+          status: 'success',
+          method: 'UPI',
+          transactionId: createTxn('UPI'),
+        };
       }
-
-      // persistence helpers (localStorage)
-      persist() {
-        try {
-          localStorage.setItem('bank_accounts', JSON.stringify(this._accounts));
-          localStorage.setItem('bank_txs', JSON.stringify(this._transactions));
-        } catch (e) { console.warn('persist failed', e); }
-      }
-
-      load() {
-        if (this._loaded) return;
-        try {
-          const a = JSON.parse(localStorage.getItem('bank_accounts') || '{}');
-          const t = JSON.parse(localStorage.getItem('bank_txs') || '[]');
-          this._accounts = a || {};
-          this._transactions = t || [];
-        } catch (e) { console.warn('load failed', e); }
-        this._loaded = true;
-      }
-
-      // account management
-      createAccount(id, name, initialBalance = 0) {
-        this.load();
-        if (!id) throw new Error('Account id required');
-        if (this._accounts[id]) throw new Error('Account already exists');
-        this._accounts[id] = { id, name: name || id, balance: Number(initialBalance) };
-        this._transactions.unshift({time:new Date().toISOString(), type:'create', details:Account ${id} created, amount: Number(initialBalance) });
-        this.persist();
-        return this._accounts[id];
-      }
-
-      getAccount(id) { this.load(); return this._accounts[id] ? {...this._accounts[id]} : null; }
-
-      listAccounts() { this.load(); return Object.values(this._accounts).map(a=>({...a})); }
-
-      totalBalance(){ this.load(); return Object.values(this._accounts).reduce((s,a)=>s+Number(a.balance),0); }
-
-      totalAccounts(){ this.load(); return Object.keys(this._accounts).length; }
-
-      // transaction operations with simple validation
-      deposit(id, amount) {
-        this.load(); amount = Number(amount);
-        if (!this._accounts[id]) throw new Error('Account not found');
-        if (amount <= 0) throw new Error('Amount must be positive');
-        this._accounts[id].balance = Number(this._accounts[id].balance) + amount;
-        const tx = {time:new Date().toISOString(), type:'deposit', details:Deposit to ${id}, amount};
-        this._transactions.unshift(tx);
-        this.persist();
-        return tx;
-      }
-
-      withdraw(id, amount) {
-        this.load(); amount = Number(amount);
-        if (!this._accounts[id]) throw new Error('Account not found');
-        if (amount <= 0) throw new Error('Amount must be positive');
-        if (Number(this._accounts[id].balance) < amount) throw new Error('Insufficient funds');
-        this._accounts[id].balance = Number(this._accounts[id].balance) - amount;
-        const tx = {time:new Date().toISOString(), type:'withdraw', details:Withdraw from ${id}, amount};
-        this._transactions.unshift(tx);
-        this.persist();
-        return tx;
-      }
-
-      transfer(fromId, toId, amount) {
-        this.load(); amount = Number(amount);
-        if (!this._accounts[fromId]) throw new Error('Source account not found');
-        if (!this._accounts[toId]) throw new Error('Destination account not found');
-        if (amount <= 0) throw new Error('Amount must be positive');
-        if (Number(this._accounts[fromId].balance) < amount) throw new Error('Insufficient funds');
-        this._accounts[fromId].balance = Number(this._accounts[fromId].balance) - amount;
-        this._accounts[toId].balance = Number(this._accounts[toId].balance) + amount;
-        const tx = {time:new Date().toISOString(), type:'transfer', details:${fromId} → ${toId}, amount};
-        this._transactions.unshift(tx);
-        this.persist();
-        return tx;
-      }
-
-      getTransactions(limit = 200) { this.load(); return this._transactions.slice(0,limit); }
-
-      reset() { this._accounts = {}; this._transactions = []; this.persist(); }
     }
 
-    // UI glue
-    const server = BankServer.getInstance();
-
-    const els = {
-      acctName:document.getElementById('acctName'),
-      acctId:document.getElementById('acctId'),
-      initialBal:document.getElementById('initialBal'),
-      createBtn:document.getElementById('createBtn'),
-      clearBtn:document.getElementById('clearBtn'),
-      accountsList:document.getElementById('accountsList'),
-      status:document.getElementById('status'),
-      totalAccts:document.getElementById('totalAccts'),
-      totalBal:document.getElementById('totalBal'),
-      opType:document.getElementById('opType'),
-      fromAcct:document.getElementById('fromAcct'),
-      toAcct:document.getElementById('toAcct'),
-      amount:document.getElementById('amount'),
-      execBtn:document.getElementById('execBtn'),
-      resetBtn:document.getElementById('resetBtn'),
-      txTable:document.querySelector('#txTable tbody')
-    };
-
-    function renderAccounts(){
-      const list = server.listAccounts();
-      els.accountsList.innerHTML = '';
-      els.fromAcct.innerHTML = '';
-      els.toAcct.innerHTML = '';
-      if (list.length===0) els.accountsList.innerHTML = '<div class="small muted">No accounts yet</div>';
-      list.forEach(a=>{
-        const div = document.createElement('div'); div.className='acct';
-        div.innerHTML = <div class="meta"><strong>${a.name}</strong><div class="small">${a.id}</div></div><div><div class="small">Balance</div><div><strong>${Number(a.balance).toFixed(2)}</strong></div></div>;
-        const actions = document.createElement('div'); actions.className='actions';
-        const del = document.createElement('button'); del.textContent='Delete'; del.className='small';
-        del.onclick = ()=>{ if(confirm('Delete account '+a.id+'? This will remove it and its history entry.')){ delete server._accounts[a.id]; server._transactions.unshift({time:new Date().toISOString(), type:'delete', details:Account ${a.id} deleted, amount:0}); server.persist(); refreshAll(); } };
-        actions.appendChild(del);
-        div.appendChild(actions);
-        els.accountsList.appendChild(div);
-
-        const opt = document.createElement('option'); opt.value = a.id; opt.textContent = ${a.id} — ${a.name};
-        els.fromAcct.appendChild(opt.cloneNode(true));
-        els.toAcct.appendChild(opt);
-      });
-
-      els.totalAccts.textContent = server.totalAccounts();
-      els.totalBal.textContent = server.totalBalance().toFixed(2);
-      els.status.textContent = 'Running (singleton instance)';
+    class WalletPayment extends Payment {
+      constructor({ amount, walletId }) {
+        super({ amount });
+        this.walletId = walletId;
+        this.balance = 1000; // demo wallet balance
+      }
+      pay() {
+        if (!this.walletId || this.walletId.length < 4) {
+          return { status: 'failed', method: 'Wallet', message: 'Invalid wallet ID' };
+        }
+        if (this.amount > this.balance) {
+          return { status: 'failed', method: 'Wallet', message: 'Insufficient wallet balance' };
+        }
+        this.balance -= this.amount;
+        return { status: 'success', method: 'Wallet', transactionId: createTxn('WAL') };
+      }
     }
 
-    function renderTxs(){
-      const txs = server.getTransactions(200);
-      els.txTable.innerHTML = '';
-      txs.forEach(tx=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML = <td class="small">${new Date(tx.time).toLocaleString()}</td><td class="small">${tx.type}</td><td class="small">${tx.details}</td><td class="small">${tx.amount!=null?Number(tx.amount).toFixed(2):''}</td>;
-        els.txTable.appendChild(tr);
-      });
+    class CodPayment extends Payment {
+      pay() {
+        // Always allowed in demo, actual app would consider order value & location
+        return { status: 'success', method: 'Cash on Delivery', transactionId: createTxn('COD') };
+      }
     }
 
-    function refreshAll(){ renderAccounts(); renderTxs(); }
+    class CreditCardPayment extends Payment {
+      constructor({ amount, cardNumber, nameOnCard, expiry, cvv }) {
+        super({ amount });
+        this.cardNumber = (cardNumber || '').replace(/\s+/g, '');
+        this.nameOnCard = nameOnCard;
+        this.expiry = expiry; // MM/YY
+        this.cvv = cvv;       // 3 digits (simplified)
+      }
+      pay() {
+        if (!luhn(this.cardNumber)) {
+          return { status: 'failed', method: 'Credit Card', message: 'Invalid card number' };
+        }
+        if (!/^\d{2}\/\d{2}$/.test(this.expiry || '')) {
+          return { status: 'failed', method: 'Credit Card', message: 'Invalid expiry (MM/YY)' };
+        }
+        if (!/^\d{3}$/.test(this.cvv || '')) {
+          return { status: 'failed', method: 'Credit Card', message: 'Invalid CVV' };
+        }
+        if (isExpired(this.expiry)) {
+          return { status: 'failed', method: 'Credit Card', message: 'Card expired' };
+        }
+        return { status: 'success', method: 'Credit Card', transactionId: createTxn('CRD') };
+      }
+    }
 
-    // wire up events
-    els.createBtn.addEventListener('click', ()=>{
-      const id = els.acctId.value.trim(); const name = els.acctName.value.trim() || id; const bal = Number(els.initialBal.value||0);
-      try{ server.createAccount(id, name, bal); els.acctId.value=''; els.acctName.value=''; els.initialBal.value = 0; refreshAll(); }
-      catch(e){ alert('Error: '+e.message); }
-    });
+    // The Factory
+    class PaymentFactory {
+      /** @param {'upi'|'wallet'|'cod'|'credit'} type */
+      static create(type, payload) {
+        switch (type) {
+          case 'upi': return new UpiPayment(payload);
+          case 'wallet': return new WalletPayment(payload);
+          case 'cod': return new CodPayment(payload);
+          case 'credit': return new CreditCardPayment(payload);
+          default: throw new Error(Unsupported payment type: ${type});
+        }
+      }
+    }
 
-    els.clearBtn.addEventListener('click', ()=>{ els.acctId.value=''; els.acctName.value=''; els.initialBal.value=0; });
+    // ——————————————————————————————
+    // Utilities
+    function createTxn(prefix){
+      // Not cryptographically secure — just a quick pretty id for demo
+      const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+      const ms = Date.now().toString(36).toUpperCase();
+      return ${prefix}-${ms}-${rand};
+    }
+    function isExpired(mmYY){
+      const [mm, yy] = mmYY.split('/').map(n => parseInt(n, 10));
+      if(!mm || !yy) return true;
+      const year = 2000 + yy; // naive conversion
+      const lastDay = new Date(year, mm, 0); // last day of month
+      const now = new Date();
+      // consider card valid through the end of expiry month
+      return now > lastDay;
+    }
+    // Luhn algorithm for card validation
+    function luhn(num){
+      if(!/^\d{12,19}$/.test(num)) return false;
+      let sum = 0; let dbl = false;
+      for(let i = num.length - 1; i >= 0; i--){
+        let d = parseInt(num[i], 10);
+        if(dbl){ d *= 2; if(d > 9) d -= 9; }
+        sum += d; dbl = !dbl;
+      }
+      return sum % 10 === 0;
+    }
 
-    els.execBtn.addEventListener('click', ()=>{
-      const op = els.opType.value; const from = els.fromAcct.value; const to = els.toAcct.value; const amt = Number(els.amount.value);
+    // ——————————————————————————————
+    // UI Logic
+    const form = document.getElementById('checkout-form');
+    const paymentType = document.getElementById('paymentType');
+    const dyn = document.getElementById('dynamic-fields');
+    const out = document.getElementById('output');
+    const err = document.getElementById('form-error');
+
+    paymentType.addEventListener('change', renderDynamicFields);
+    form.addEventListener('submit', onSubmit);
+
+    function renderDynamicFields(){
+      err.style.display = 'none'; err.textContent = '';
+      const type = paymentType.value;
+      dyn.innerHTML = '';
+      if(!type) return;
+
+      if(type === 'upi'){
+        dyn.innerHTML = `
+          <label for="upiId">UPI ID</label>
+          <input id="upiId" name="upiId" placeholder="username@bank" required />
+        `;
+      }
+      else if(type === 'wallet'){
+        dyn.innerHTML = `
+          <label for="walletId">Wallet ID</label>
+          <input id="walletId" name="walletId" placeholder="e.g., 98XXXXXX23" required />
+        `;
+      }
+      else if(type === 'credit'){
+        dyn.innerHTML = `
+          <label for="nameOnCard">Name on Card</label>
+          <input id="nameOnCard" name="nameOnCard" placeholder="Full Name" required />
+          <label for="cardNumber">Card Number</label>
+          <input id="cardNumber" name="cardNumber" inputmode="numeric" placeholder="4111 1111 1111 1111" maxlength="19" required />
+          <div class="row">
+            <div>
+              <label for="expiry">Expiry (MM/YY)</label>
+              <input id="expiry" name="expiry" placeholder="09/27" maxlength="5" required />
+            </div>
+            <div>
+              <label for="cvv">CVV</label>
+              <input id="cvv" name="cvv" inputmode="numeric" placeholder="123" maxlength="3" required />
+            </div>
+          </div>
+        `;
+        // small formatter for card input
+        setTimeout(() => {
+          const card = document.getElementById('cardNumber');
+          card.addEventListener('input', () => {
+            const digits = card.value.replace(/\D/g, '').slice(0,19);
+            card.value = digits.replace(/(.{4})/g, '$1 ').trim();
+          });
+          const expiry = document.getElementById('expiry');
+          expiry.addEventListener('input', () => {
+            const d = expiry.value.replace(/\D/g, '').slice(0,4);
+            expiry.value = d.length > 2 ? d.slice(0,2) + '/' + d.slice(2) : d;
+          });
+        }, 0);
+      }
+      // COD needs no extra fields
+    }
+
+    function onSubmit(e){
+      e.preventDefault();
+      out.textContent = '';
+      err.style.display = 'none'; err.textContent = '';
+
       try{
-        if (op==='deposit') { server.deposit(from, amt); }
-        else if (op==='withdraw'){ server.withdraw(from, amt); }
-        else if (op==='transfer'){ server.transfer(from, to, amt); }
-        els.amount.value = 0; refreshAll();
-      } catch(e){ alert('Error: '+e.message); }
-    });
+        const fd = new FormData(form);
+        const amount = fd.get('amount');
+        const type = fd.get('paymentType');
+        if(!type){ throw new Error('Please select a payment method'); }
 
-    els.resetBtn.addEventListener('click', ()=>{
-      if (confirm('Reset server: erase all accounts and transactions?')){ server.reset(); refreshAll(); }
-    });
+        const payload = { amount };
+        if(type === 'upi') payload.upiId = fd.get('upiId');
+        if(type === 'wallet') payload.walletId = fd.get('walletId');
+        if(type === 'credit') {
+          payload.nameOnCard = fd.get('nameOnCard');
+          payload.cardNumber = (fd.get('cardNumber')||'').replace(/\s+/g,'');
+          payload.expiry = fd.get('expiry');
+          payload.cvv = fd.get('cvv');
+        }
 
-    // initial load
-    refreshAll();
+        const payment = PaymentFactory.create(type, payload);
+        console.log('[Factory] Created:', payment.constructor.name, payment);
+        const result = payment.pay();
+        console.log('[Payment] Result:', result);
 
-    // expose server for console debugging (singleton nature visible here)
-    window.BankServer = BankServer;
-    window._bankServer = server;
+        out.textContent = JSON.stringify({
+          amount: Number(amount),
+          ...result
+        }, null, 2);
 
+        if(result.status === 'failed'){
+          err.textContent = result.message || 'Payment failed';
+          err.style.display = 'block';
+        }
+      } catch(ex){
+        console.error(ex);
+        err.textContent = ex.message || 'Something went wrong';
+        err.style.display = 'block';
+      }
+    }
   </script>
 </body>
 </html>
